@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { mockDelay } from '../data/mockData';
 
 const DocumentUpload = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -19,20 +20,10 @@ const DocumentUpload = () => {
     setUploading(true);
     setResult(null);
     setError(null);
-    const formData = new FormData();
-    formData.append('document', file);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/upload/document`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setResult(data.url);
-      } else {
-        setError(data.error || 'Upload failed');
-      }
+      await mockDelay(350);
+      const fakeUrl = URL.createObjectURL ? URL.createObjectURL(file) : '#';
+      setResult(fakeUrl);
     } catch (err: any) {
       setError(err.message || 'Upload failed');
     } finally {
@@ -61,4 +52,4 @@ const DocumentUpload = () => {
   );
 };
 
-export default DocumentUpload; 
+export default DocumentUpload;

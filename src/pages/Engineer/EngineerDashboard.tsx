@@ -17,6 +17,7 @@ import PartDetailsView from '../../components/parts/PartDetailsView';
 import type { Material } from '../../store/materialApi';
 import { getAllMaterials } from '../../store/materialApi';
 import { apiService } from '../../services/customerapi';   
+import { MockDB, mockDelay } from '../../data/mockData';
 import { NavLink } from 'react-router-dom';
 import { Outlet } from "react-router-dom";
 
@@ -92,22 +93,9 @@ const EngineerDashboard = () => {
   const fetchParts = async () => {
     setLoading(true);
     try {
-      // Fixed: Use VITE_API_URL instead of REACT_APP_API_URL
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/engineer`, {
-        credentials: 'include'
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          setParts(data);
-        } else {
-          console.error('Expected parts data to be an array');
-          setParts([]);
-        }
-      } else {
-        console.error('Failed to fetch parts');
-        setParts([]);
-      }
+      await mockDelay(150);
+      const data = MockDB.getParts();
+      setParts(data as unknown as Part[]);
     } catch (error) {
       console.error('Error fetching parts:', error);
       setParts([]);
@@ -120,23 +108,9 @@ const EngineerDashboard = () => {
     setLoading(true);
     try {
       const response = await apiService.getAllCustomers();
-      console.log('Customer response:', response); // Debug log
-      
-      // Handle response based on its structure
-      if (response && typeof response === 'object') {
-        const customerResp = response as CustomerResponse | Customer[];
-        if (Array.isArray(customerResp)) {
-          setCustomers(customerResp);
-        } else if (customerResp.data && Array.isArray(customerResp.data)) {
-          setCustomers(customerResp.data);
-        } else if (customerResp.customers && Array.isArray(customerResp.customers)) {
-          setCustomers(customerResp.customers);
-        } else {
-          console.error('Unexpected customer data structure:', response);
-          setCustomers([]);
-        }
+      if (response && response.data) {
+        setCustomers(response.data as unknown as Customer[]);
       } else {
-        console.error('Invalid customer data received:', response);
         setCustomers([]);
       }
     } catch (error) {
@@ -149,7 +123,7 @@ const EngineerDashboard = () => {
 
   const handleFormSubmit = async (formData: PartFormData) => {
     try {
-      // Clean up empty documents
+      await mockDelay(200);
       const cleanedData = {
         ...formData,
         documents: formData.documents.filter(doc => doc.trim() !== ''),
@@ -160,30 +134,18 @@ const EngineerDashboard = () => {
         }))
       };
 
-      // Fixed: Use VITE_API_URL instead of REACT_APP_API_URL
-      const url = editingPartId 
-        ? `${import.meta.env.VITE_API_URL}/api/engineer/${editingPartId}`
-        : `${import.meta.env.VITE_API_URL}/api/engineer`;
-
-      const response = await fetch(url, {
-        method: editingPartId ? 'PATCH' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(cleanedData)
-      });
-
-      if (response.ok) {
-        alert(editingPartId ? 'Part updated successfully!' : 'Part created successfully!');
-        fetchParts(); // Refresh the parts list
-        setShowForm(false); // Hide the form
-        setEditingPartId(null); // Clear editing state
-        setInitialFormData(undefined); // Clear initial data
+      if (editingPartId) {
+        MockDB.updatePart(editingPartId, cleanedData);
+        alert('Part updated successfully!');
       } else {
-        const error = await response.json();
-        alert(`Error: ${error.message || 'Failed to save part'}`);
+        MockDB.addPart(cleanedData);
+        alert('Part created successfully!');
       }
+
+      fetchParts();
+      setShowForm(false);
+      setEditingPartId(null);
+      setInitialFormData(undefined);
     } catch (error) {
       console.error('Error saving part:', error);
       alert('Error saving part. Please try again.');

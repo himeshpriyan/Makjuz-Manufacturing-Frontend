@@ -7,6 +7,7 @@ import type { Part, Customer, PartFormData } from "../../store/types/Part";
 import type { Material } from "../../store/materialApi";
 import { getAllMaterials } from "../../store/materialApi";
 import { apiService } from "../../services/customerapi";
+import { MockDB, mockDelay } from "../../data/mockData";
 
 interface CustomerResponse {
   data?: Customer[];
@@ -61,15 +62,9 @@ const PartsPage = () => {
   const fetchParts = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/engineer`, {
-        credentials: "include",
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          setParts(data);
-        }
-      }
+      await mockDelay(150);
+      const data = MockDB.getParts();
+      setParts(data as unknown as Part[]);
     } catch (error) {
       console.error("Error fetching parts:", error);
     } finally {
@@ -81,15 +76,10 @@ const PartsPage = () => {
     setLoading(true);
     try {
       const response = await apiService.getAllCustomers();
-      if (response && typeof response === "object") {
-        const customerResp = response as CustomerResponse | Customer[];
-        if (Array.isArray(customerResp)) {
-          setCustomers(customerResp);
-        } else if (customerResp.data && Array.isArray(customerResp.data)) {
-          setCustomers(customerResp.data);
-        } else if (customerResp.customers && Array.isArray(customerResp.customers)) {
-          setCustomers(customerResp.customers);
-        }
+      if (response && response.data) {
+        setCustomers(response.data as unknown as Customer[]);
+      } else {
+        setCustomers([]);
       }
     } catch (error) {
       console.error("Error fetching customers:", error);
@@ -100,6 +90,7 @@ const PartsPage = () => {
 
   const handleFormSubmit = async (formData: PartFormData) => {
     try {
+      await mockDelay(200);
       const cleanedData = {
         ...formData,
         documents: formData.documents.filter((doc) => doc.trim() !== ""),
@@ -110,27 +101,18 @@ const PartsPage = () => {
         })),
       };
 
-      const url = editingPartId
-        ? `${import.meta.env.VITE_API_URL}/api/engineer/${editingPartId}`
-        : `${import.meta.env.VITE_API_URL}/api/engineer`;
-
-      const response = await fetch(url, {
-        method: editingPartId ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(cleanedData),
-      });
-
-      if (response.ok) {
-        alert(editingPartId ? "Part updated successfully!" : "Part created successfully!");
-        fetchParts();
-        setShowForm(false);
-        setEditingPartId(null);
-        setInitialFormData(undefined);
+      if (editingPartId) {
+        MockDB.updatePart(editingPartId, cleanedData);
+        alert("Part updated successfully!");
       } else {
-        const error = await response.json();
-        alert(`Error: ${error.message || "Failed to save part"}`);
+        MockDB.addPart(cleanedData);
+        alert("Part created successfully!");
       }
+
+      fetchParts();
+      setShowForm(false);
+      setEditingPartId(null);
+      setInitialFormData(undefined);
     } catch (error) {
       console.error("Error saving part:", error);
       alert("Error saving part. Please try again.");

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MockDB, mockDelay } from '../../data/mockData';
 import { 
   Plus, 
   Eye, 
@@ -130,38 +131,12 @@ const PurchaseOrdersDashboard: React.FC = () => {
     materials: []
   });
 
-  const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
-
-  // API Helper Function
-  const apiCall = async (url: string, options: RequestInit = {}) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}${url}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        ...options,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
-    }
-  };
-
   // Fetch Companies
   const fetchCompanies = async () => {
     try {
-      const response = await apiCall('/customers/');
-      if (response.success && response.data) {
-        setCompanies(response.data);
-      }
+      await mockDelay(100);
+      const data = MockDB.getCustomers();
+      setCompanies(data as unknown as Company[]);
     } catch (error) {
       setError('Failed to fetch companies');
       console.error('Error fetching companies:', error);
@@ -171,20 +146,9 @@ const PurchaseOrdersDashboard: React.FC = () => {
   // Fetch POs
   const fetchPOs = async () => {
     try {
-      const data = await apiCall('/planning/po');
-      if (Array.isArray(data)) {
-        const enrichedPOs = data.map(po => {
-          const company = companies.find(c => c._id === po.company._id);
-          return {
-            ...po,
-            company: {
-              ...po.company,
-              companyName: company?.companyName || 'Unknown Company'
-            }
-          };
-        });
-        setPOs(enrichedPOs);
-      }
+      await mockDelay(150);
+      const data = MockDB.getPOs();
+      setPOs(data as unknown as PO[]);
     } catch (error) {
       setError('Failed to fetch purchase orders');
       console.error('Error fetching POs:', error);
@@ -258,7 +222,8 @@ const PurchaseOrdersDashboard: React.FC = () => {
   const handleDeletePO = async (poId: string) => {
     if (window.confirm('Are you sure you want to delete this PO?')) {
       try {
-        await apiCall(`/planning/po/${poId}`, { method: 'DELETE' });
+        await mockDelay(150);
+        MockDB.deletePO(poId);
         setPOs(pos.filter(po => po._id !== poId));
         setError(null);
       } catch (error) {
@@ -278,16 +243,11 @@ const PurchaseOrdersDashboard: React.FC = () => {
     setError(null);
 
     try {
+      await mockDelay(200);
       if (modalType === 'create') {
-        await apiCall('/planning/po/', {
-          method: 'POST',
-          body: JSON.stringify(formData)
-        });
+        MockDB.addPO(formData);
       } else if (modalType === 'edit' && selectedPO) {
-        await apiCall(`/planning/po/${selectedPO._id}`, {
-          method: 'PUT',
-          body: JSON.stringify(formData)
-        });
+        MockDB.updatePO(selectedPO._id, formData);
       }
       setShowModal(false);
       await fetchPOs();

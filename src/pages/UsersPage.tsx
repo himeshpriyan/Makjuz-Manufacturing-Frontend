@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MockDB, mockDelay } from '../data/mockData';
 import {
   Users,
   Plus,
@@ -56,8 +57,6 @@ const UsersPage: React.FC = () => {
     customerId: '',
   });
 
-  const API_BASE_URL = 'https://manufacturing-frontend-rose.vercel.app/api';
-
   const roles = [
     { value: 'admin', label: 'Admin', color: 'bg-purple-100 text-purple-800' },
     { value: 'engineer', label: 'Engineer', color: 'bg-blue-100 text-blue-800' },
@@ -71,15 +70,9 @@ const UsersPage: React.FC = () => {
   // Fetch Users
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/users`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      const data = await response.json();
-      if (data.success) {
-        setUsers(data.users || []);
-      }
+      await mockDelay(150);
+      const data = MockDB.getUsers();
+      setUsers(data as unknown as User[]);
     } catch (error) {
       console.error('Error fetching users:', error);
       setError('Failed to fetch users');
@@ -133,19 +126,10 @@ const UsersPage: React.FC = () => {
     if (!window.confirm('Are you sure you want to delete this user?')) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-
-      if (response.ok) {
-        setUsers(users.filter(user => user._id !== userId));
-        setError(null);
-      } else {
-        throw new Error('Failed to delete user');
-      }
+      await mockDelay(150);
+      MockDB.deleteUser(userId);
+      setUsers(users.filter(user => user._id !== userId));
+      setError(null);
     } catch (error) {
       console.error('Error deleting user:', error);
       setError('Failed to delete user');
@@ -168,27 +152,15 @@ const UsersPage: React.FC = () => {
     setError(null);
 
     try {
-      const url = modalType === 'create' 
-        ? `${API_BASE_URL}/auth/signup`
-        : `${API_BASE_URL}/auth/users/${selectedUser?._id}`;
-
-      const response = await fetch(url, {
-        method: modalType === 'create' ? 'POST' : 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setShowModal(false);
-        await fetchUsers();
-      } else {
-        setError(data.message || 'Failed to save user');
+      await mockDelay(200);
+      if (modalType === 'create') {
+        MockDB.addUser(formData as any);
+      } else if (selectedUser) {
+        MockDB.updateUser(selectedUser._id, formData as any);
       }
+
+      setShowModal(false);
+      await fetchUsers();
     } catch (error) {
       console.error('Error saving user:', error);
       setError('Failed to save user');

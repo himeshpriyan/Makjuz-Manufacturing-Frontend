@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users } from 'lucide-react';
+import { MockDB, mockDelay } from '../../data/mockData';
 
 interface Company {
   _id: string;
@@ -19,13 +20,9 @@ const SuppliersPage: React.FC = () => {
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/customers/`, {
-          credentials: 'include',
-        });
-        const data = await response.json();
-        if (data.success) {
-          setCompanies(data.data);
-        }
+        await mockDelay(150);
+        const data = MockDB.getCustomers();
+        setCompanies(data as unknown as Company[]);
       } catch (error) {
         console.error('Error fetching companies:', error);
       } finally {

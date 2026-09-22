@@ -1,115 +1,125 @@
 import { useState, useEffect } from 'react';
 import type { Customer, Part, Order, PopulatedOrder } from '../store/types/orders';
+import { MockDB, mockDelay } from '../data/mockData';
 
-const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
-
-// API utility functions
+// API utility functions backed by MockDB
 export const api = {
   // Customer endpoints
   customers: {
     getAll: async (): Promise<Customer[]> => {
-      const response = await fetch(`${API_BASE_URL}/customers`, {
-        credentials: 'include',
-      });
-      if (!response.ok) throw new Error('Failed to fetch customers');
-      const result = await response.json();
-      return result.data || result;
+      await mockDelay(150);
+      const list = MockDB.getCustomers();
+      return list.map(c => ({
+        _id: c._id,
+        customerId: c.customerId,
+        companyName: c.companyName,
+        phone: c.phone,
+        email: c.email,
+        address: c.address,
+        partNumbers: c.partNumbers.map(p => p.partNumber),
+        GST: c.GST,
+        PAN: c.PAN,
+        TAN: c.TAN,
+        commercialEmail: c.commercialEmail,
+        creditTerms: c.creditTerms,
+        creditDays: c.creditDays,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt
+      }));
     },
     
     getById: async (id: string): Promise<Customer> => {
-      const response = await fetch(`${API_BASE_URL}/customers/${id}`, {
-        credentials: 'include',
-      });
-      if (!response.ok) throw new Error('Failed to fetch customer');
-      const result = await response.json();
-      return result.data || result;
+      await mockDelay(100);
+      const c = MockDB.getCustomerById(id);
+      if (!c) throw new Error('Customer not found');
+      return {
+        _id: c._id,
+        customerId: c.customerId,
+        companyName: c.companyName,
+        phone: c.phone,
+        email: c.email,
+        address: c.address,
+        partNumbers: c.partNumbers.map(p => p.partNumber),
+        GST: c.GST,
+        PAN: c.PAN,
+        TAN: c.TAN,
+        commercialEmail: c.commercialEmail,
+        creditTerms: c.creditTerms,
+        creditDays: c.creditDays,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt
+      };
     },
     
     create: async (customer: Partial<Customer>): Promise<Customer> => {
-      const response = await fetch(`${API_BASE_URL}/customers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(customer),
-      });
-      if (!response.ok) throw new Error('Failed to create customer');
-      const result = await response.json();
-      return result.data || result;
+      await mockDelay(200);
+      const created = MockDB.addCustomer(customer);
+      return {
+        _id: created._id,
+        customerId: created.customerId,
+        companyName: created.companyName,
+        phone: created.phone,
+        email: created.email,
+        address: created.address,
+        partNumbers: created.partNumbers.map(p => p.partNumber),
+        GST: created.GST,
+        PAN: created.PAN,
+        TAN: created.TAN,
+        commercialEmail: created.commercialEmail,
+        creditTerms: created.creditTerms,
+        creditDays: created.creditDays,
+        createdAt: created.createdAt,
+        updatedAt: created.updatedAt
+      };
     }
   },
   
   // Parts endpoints  
   parts: {
     getByCustomer: async (customerId: string): Promise<Part[]> => {
-      const response = await fetch(`${API_BASE_URL}/customers`, {
-        credentials: 'include',
-      });
-      if (!response.ok) throw new Error('Failed to fetch customers');
-      const result = await response.json();
-      const customers = result.data || result;
-      
-      // Find the specific customer
-      const customer = customers.find((c: Customer) => c._id === customerId);
-      if (!customer) throw new Error('Customer not found');
-      
-      // Convert partNumbers to Part objects
-      const parts: Part[] = customer.partNumbers.map((partNum: any) => ({
-        _id: partNum._id,
+      await mockDelay(150);
+      const parts = MockDB.getPartsByCustomer(customerId);
+      if (parts.length > 0) {
+        return parts as unknown as Part[];
+      }
+      // If customer has part numbers listed, synthesize parts
+      const customer = MockDB.getCustomerById(customerId);
+      if (!customer) return [];
+
+      return customer.partNumbers.map((partNum: any) => ({
+        _id: partNum._id || `part-${Date.now()}`,
         partNumber: partNum.partNumber,
-        description: `Part ${partNum.partNumber}`, // Default description
+        description: `Part ${partNum.partNumber}`,
         customer: customerId,
         documents: [],
-        rawMaterial: 'Unknown', // Default value
-        quantityPerScrew: 1, // Default value
+        rawMaterial: 'Standard Steel',
+        quantityPerScrew: 1,
         processSteps: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }));
-      
-      return parts;
     }
   },
   
   // Orders endpoints
   orders: {
     getAll: async (): Promise<PopulatedOrder[]> => {
-      const response = await fetch(`${API_BASE_URL}/planning`, {
-        credentials: 'include',
-      });
-      if (!response.ok) throw new Error('Failed to fetch orders');
-      const result = await response.json();
-      return result.data || result;
+      await mockDelay(150);
+      const orders = MockDB.getOrders();
+      return orders as unknown as PopulatedOrder[];
     },
     
     create: async (order: Order): Promise<PopulatedOrder> => {
-      const response = await fetch(`${API_BASE_URL}/planning`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(order),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        // Handle duplicate order number error specifically
-        if (error.error && error.error.includes('E11000 duplicate key error')) {
-          throw new Error('Order number conflict. Please try again - the system will generate a new unique order number.');
-        }
-        throw new Error(error.message || error.error || 'Failed to create order');
-      }
-      const result = await response.json();
-      return result.data || result;
+      await mockDelay(200);
+      const created = MockDB.addOrder(order);
+      return created as unknown as PopulatedOrder;
     },
     
     update: async (id: string, order: Partial<Order>): Promise<PopulatedOrder> => {
-      const response = await fetch(`${API_BASE_URL}/planning/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(order),
-      });
-      if (!response.ok) throw new Error('Failed to update order');
-      const result = await response.json();
-      return result.data || result;
+      await mockDelay(200);
+      const updated = MockDB.updateOrder(id, order);
+      if (!updated) throw new Error('Order not found');
+      return updated as unknown as PopulatedOrder;
     }
   }
 };
@@ -120,24 +130,24 @@ export const useCustomers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        setLoading(true);
-        const data = await api.customers.getAll();
-        setCustomers(data);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch customers');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      const data = await api.customers.getAll();
+      setCustomers(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch customers');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchCustomers();
   }, []);
 
-  return { customers, loading, error, refetch: () => setLoading(true) };
+  return { customers, loading, error, refetch: fetchCustomers };
 };
 
 export const useParts = (customerId: string | null) => {

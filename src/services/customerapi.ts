@@ -1,63 +1,68 @@
-const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
+import { MockDB, mockDelay } from '../data/mockData';
+import type { Customer, ApiResponse } from '../store/types/customer';
 
 class ApiService {
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
-
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      credentials: 'include', // <-- Important: send cookies with every request
-      ...options,
-    };
-
-    try {
-      const response = await fetch(url, config);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'API request failed');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('API request failed:', error);
-      throw error;
-    }
-  }
-
   // Customer endpoints
-  async getAllCustomers() {
-    return this.request('/customers');
+  async getAllCustomers(): Promise<ApiResponse<Customer[]>> {
+    await mockDelay(150);
+    const customers = MockDB.getCustomers() as unknown as Customer[];
+    return {
+      success: true,
+      message: 'Customers retrieved successfully',
+      data: customers,
+      count: customers.length
+    };
   }
 
-  async getCustomerById(id: string) {
-    return this.request(`/customers/${id}`);
+  async getCustomerById(id: string): Promise<ApiResponse<Customer>> {
+    await mockDelay(100);
+    const customer = MockDB.getCustomerById(id) as unknown as Customer;
+    if (!customer) {
+      return {
+        success: false,
+        message: 'Customer not found'
+      };
+    }
+    return {
+      success: true,
+      message: 'Customer retrieved successfully',
+      data: customer
+    };
   }
 
-  async createCustomer(customerData: any) {
-    return this.request('/customers', {
-      method: 'POST',
-      body: JSON.stringify(customerData),
-    });
+  async createCustomer(customerData: any): Promise<ApiResponse<Customer>> {
+    await mockDelay(200);
+    const created = MockDB.addCustomer(customerData) as unknown as Customer;
+    return {
+      success: true,
+      message: 'Customer created successfully',
+      data: created
+    };
   }
 
-  async updateCustomer(id: string, customerData: any) {
-    return this.request(`/customers/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(customerData),
-    });
+  async updateCustomer(id: string, customerData: any): Promise<ApiResponse<Customer>> {
+    await mockDelay(200);
+    const updated = MockDB.updateCustomer(id, customerData) as unknown as Customer;
+    if (!updated) {
+      return {
+        success: false,
+        message: 'Customer not found for update'
+      };
+    }
+    return {
+      success: true,
+      message: 'Customer updated successfully',
+      data: updated
+    };
   }
 
-  async deleteCustomer(id: string) {
-    return this.request(`/customers/${id}`, {
-      method: 'DELETE',
-    });
+  async deleteCustomer(id: string): Promise<ApiResponse<any>> {
+    await mockDelay(150);
+    MockDB.deleteCustomer(id);
+    return {
+      success: true,
+      message: 'Customer deleted successfully'
+    };
   }
 }
 

@@ -77,8 +77,6 @@ const ProductsPage: React.FC = () => {
     status: 'active',
   });
 
-  const API_BASE_URL = 'https://manufacturing-frontend-rose.vercel.app/api';
-
   const categories = [
     'Raw Materials',
     'Components',

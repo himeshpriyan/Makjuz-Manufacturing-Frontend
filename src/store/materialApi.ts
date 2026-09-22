@@ -1,3 +1,5 @@
+import { MockDB, mockDelay } from '../data/mockData';
+
 export interface Material {
   _id: string;
   materialId: string;
@@ -12,58 +14,81 @@ export interface Material {
   updatedAt: Date;
 }
 
-const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
-
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
-  const config: RequestInit = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    credentials: 'include',
-    ...options,
-  };
-
-  try {
-    const response = await fetch(url, config);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'API request failed');
-    }
-
-    return data;
-  } catch (error) {
-    console.error('API request failed:', error);
-    throw error;
-  }
-}
-
 export const getAllMaterials = async (): Promise<Material[]> => {
-  return request('/materials');
+  await mockDelay(150);
+  const list = MockDB.getMaterials();
+  return list.map(m => ({
+    _id: m._id || m.id,
+    materialId: m.materialId,
+    name: m.name,
+    description: m.description,
+    currentStock: m.currentStock,
+    unit: m.unit,
+    reorderLevel: m.reorderLevel || m.minStockLevel || 0,
+    supplier: m.supplier,
+    lastRestockDate: m.lastRestockDate ? new Date(m.lastRestockDate) : undefined,
+    createdAt: new Date(m.createdAt),
+    updatedAt: new Date(m.updatedAt)
+  }));
 };
 
 export const getMaterialById = async (id: string): Promise<Material> => {
-  return request(`/materials/${id}`);
+  await mockDelay(100);
+  const m = MockDB.getMaterialById(id);
+  if (!m) throw new Error('Material not found');
+  return {
+    _id: m._id || m.id,
+    materialId: m.materialId,
+    name: m.name,
+    description: m.description,
+    currentStock: m.currentStock,
+    unit: m.unit,
+    reorderLevel: m.reorderLevel || m.minStockLevel || 0,
+    supplier: m.supplier,
+    lastRestockDate: m.lastRestockDate ? new Date(m.lastRestockDate) : undefined,
+    createdAt: new Date(m.createdAt),
+    updatedAt: new Date(m.updatedAt)
+  };
 };
 
 export const createMaterial = async (materialData: Omit<Material, '_id' | 'createdAt' | 'updatedAt'>): Promise<Material> => {
-  return request('/materials', {
-    method: 'POST',
-    body: JSON.stringify(materialData),
-  });
+  await mockDelay(200);
+  const created = MockDB.addMaterial(materialData);
+  return {
+    _id: created._id || created.id,
+    materialId: created.materialId,
+    name: created.name,
+    description: created.description,
+    currentStock: created.currentStock,
+    unit: created.unit,
+    reorderLevel: created.reorderLevel,
+    supplier: created.supplier,
+    lastRestockDate: new Date(created.lastRestockDate),
+    createdAt: new Date(created.createdAt),
+    updatedAt: new Date(created.updatedAt)
+  };
 };
 
 export const updateMaterial = async (id: string, materialData: Partial<Material>): Promise<Material> => {
-  return request(`/materials/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(materialData),
-  });
+  await mockDelay(200);
+  const updated = MockDB.updateMaterial(id, materialData);
+  if (!updated) throw new Error('Material not found');
+  return {
+    _id: updated._id || updated.id,
+    materialId: updated.materialId,
+    name: updated.name,
+    description: updated.description,
+    currentStock: updated.currentStock,
+    unit: updated.unit,
+    reorderLevel: updated.reorderLevel,
+    supplier: updated.supplier,
+    lastRestockDate: new Date(updated.lastRestockDate),
+    createdAt: new Date(updated.createdAt),
+    updatedAt: new Date(updated.updatedAt)
+  };
 };
 
 export const deleteMaterial = async (id: string): Promise<void> => {
-  return request(`/materials/${id}`, {
-    method: 'DELETE',
-  });
+  await mockDelay(150);
+  MockDB.deleteMaterial(id);
 };

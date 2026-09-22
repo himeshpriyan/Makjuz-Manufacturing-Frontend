@@ -1,4 +1,6 @@
 // planningApi.ts
+import { MockDB, mockDelay } from '../data/mockData';
+
 export interface PlanPayload {
   machineType: string;
   rawMaterials?: string;
@@ -26,40 +28,47 @@ export interface Plan {
   updatedAt?: string;
 }
 
-const BASE = `${import.meta.env.VITE_API_URL}/api/planning`;
-
 export async function getAllPlans(q?: string) {
-  const qs = q ? `?q=${encodeURIComponent(q)}` : "";
-  const res = await fetch(`${BASE}/plans${qs}`, {
-    credentials: "include"
-  });
-  return res.json();
+  await mockDelay(150);
+  const plans = MockDB.getPlans(q);
+  return {
+    success: true,
+    plans,
+    count: plans.length
+  };
 }
 
 export async function createPlan(payload: PlanPayload) {
-  const res = await fetch(`${BASE}/plans`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  return res.json();
+  await mockDelay(200);
+  const plan = MockDB.addPlan(payload);
+  return {
+    success: true,
+    message: 'Plan created successfully',
+    plan
+  };
 }
 
 export async function updatePlan(id: string, payload: Partial<PlanPayload>) {
-  const res = await fetch(`${BASE}/plans/${id}`, {
-    method: "PATCH",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  return res.json();
+  await mockDelay(200);
+  const plan = MockDB.updatePlan(id, payload);
+  if (!plan) {
+    return {
+      success: false,
+      message: 'Plan not found'
+    };
+  }
+  return {
+    success: true,
+    message: 'Plan updated successfully',
+    plan
+  };
 }
 
 export async function deletePlan(id: string) {
-  const res = await fetch(`${BASE}/plans/${id}`, {
-    method: "DELETE",
-    credentials: "include",
-  });
-  return res.json();
+  await mockDelay(150);
+  MockDB.deletePlan(id);
+  return {
+    success: true,
+    message: 'Plan deleted successfully'
+  };
 }

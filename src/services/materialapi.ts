@@ -1,63 +1,60 @@
-// src/services/api.ts
-import type { Material, FormData } from '../store/types/Material'; // We'll create this type file next
-
-const API_URL = `${import.meta.env.VITE_API_URL}/api/materials`;
+// src/services/materialapi.ts
+import type { Material, FormData } from '../store/types/Material';
+import { MockDB, mockDelay } from '../data/mockData';
 
 // Fetch all materials
 export const fetchMaterials = async (): Promise<Material[]> => {
-  const response = await fetch(API_URL);
-  if (!response.ok) {
-    throw new Error('Failed to fetch materials');
-  }
-  return response.json();
+  await mockDelay(150);
+  const materials = MockDB.getMaterials();
+  return materials.map(m => ({
+    id: m.id || m._id,
+    materialId: m.materialId,
+    name: m.name,
+    description: m.description,
+    unit: m.unit,
+    currentStock: m.currentStock,
+    minStockLevel: m.minStockLevel,
+    supplier: m.supplier
+  }));
 };
 
 // Create new material
 export const createMaterial = async (material: FormData): Promise<Material> => {
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      ...material,
-      materialId: material.materialId.toUpperCase()
-    })
-  });
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Create failed');
-  }
-  
-  return response.json();
+  await mockDelay(200);
+  const created = MockDB.addMaterial(material);
+  return {
+    id: created.id,
+    materialId: created.materialId,
+    name: created.name,
+    description: created.description,
+    unit: created.unit,
+    currentStock: created.currentStock,
+    minStockLevel: created.minStockLevel,
+    supplier: created.supplier
+  };
 };
 
 // Update existing material
 export const updateMaterial = async (id: string, material: FormData): Promise<Material> => {
-  const response = await fetch(`${API_URL}/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      ...material,
-      materialId: material.materialId.toUpperCase()
-    })
-  });
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Update failed');
+  await mockDelay(200);
+  const updated = MockDB.updateMaterial(id, material);
+  if (!updated) {
+    throw new Error('Material not found');
   }
-  
-  return response.json();
+  return {
+    id: updated.id,
+    materialId: updated.materialId,
+    name: updated.name,
+    description: updated.description,
+    unit: updated.unit,
+    currentStock: updated.currentStock,
+    minStockLevel: updated.minStockLevel,
+    supplier: updated.supplier
+  };
 };
 
 // Delete material
 export const deleteMaterial = async (id: string): Promise<void> => {
-  const response = await fetch(`${API_URL}/${id}`, {
-    method: 'DELETE'
-  });
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Delete failed');
-  }
+  await mockDelay(150);
+  MockDB.deleteMaterial(id);
 };

@@ -11,8 +11,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
-
-const API_URL = "/api";
+import { mockDelay } from '../data/mockData';
 
 const SettingsPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -56,22 +55,8 @@ const SettingsPage: React.FC = () => {
     const fetchSettings = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`${API_URL}/settings`, {
-          method: 'GET',
-          credentials: 'include',
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          setGeneralSettings(data.settings.general);
-          setNotifications(data.settings.notifications);
-          setSecuritySettings({
-            ...securitySettings,
-            twoFactorAuth: data.settings.security.twoFactorAuth,
-            sessionTimeout: data.settings.security.sessionTimeout,
-          });
-        }
+        await mockDelay(150);
+        // Default settings are already in state
       } catch (error) {
         console.error('Error fetching settings:', error);
         setError('Failed to load settings');
@@ -86,23 +71,9 @@ const SettingsPage: React.FC = () => {
   const handleSaveGeneralSettings = async () => {
     try {
       setError('');
-      const response = await fetch(`${API_URL}/settings/general`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(generalSettings),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
-      } else {
-        setError(data.message || 'Failed to save settings');
-      }
+      await mockDelay(200);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Error saving general settings:', error);
       setError('Failed to save settings');
@@ -112,23 +83,9 @@ const SettingsPage: React.FC = () => {
   const handleSaveNotifications = async () => {
     try {
       setError('');
-      const response = await fetch(`${API_URL}/settings/notifications`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(notifications),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
-      } else {
-        setError(data.message || 'Failed to save settings');
-      }
+      await mockDelay(200);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Error saving notification settings:', error);
       setError('Failed to save settings');
@@ -151,25 +108,7 @@ const SettingsPage: React.FC = () => {
           return;
         }
 
-        const passwordResponse = await fetch(`${API_URL}/settings/change-password`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            currentPassword: securitySettings.currentPassword,
-            newPassword: securitySettings.newPassword,
-            confirmPassword: securitySettings.confirmPassword,
-          }),
-        });
-
-        const passwordData = await passwordResponse.json();
-
-        if (!passwordData.success) {
-          setError(passwordData.message || 'Failed to change password');
-          return;
-        }
+        await mockDelay(200);
 
         // Clear password fields after successful change
         setSecuritySettings({
@@ -180,27 +119,9 @@ const SettingsPage: React.FC = () => {
         });
       }
 
-      // Update other security settings
-      const response = await fetch(`${API_URL}/settings/security`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          twoFactorAuth: securitySettings.twoFactorAuth,
-          sessionTimeout: securitySettings.sessionTimeout,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
-      } else {
-        setError(data.message || 'Failed to save settings');
-      }
+      await mockDelay(150);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Error saving security settings:', error);
       setError('Failed to save settings');

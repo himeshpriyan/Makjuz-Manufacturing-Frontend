@@ -16,8 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
-
-const API_URL = "/api"; // Use proxy for all environments
+import { MockDB, mockDelay } from '../data/mockData';
 
 const ProfilePage: React.FC = () => {
   const { user } = useAuthStore();
@@ -44,31 +43,22 @@ const ProfilePage: React.FC = () => {
     const fetchProfile = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`${API_URL}/users/profile`, {
-          method: 'GET',
-          credentials: 'include', // Important: This sends cookies
-          headers: {
-            'Content-Type': 'application/json',
-          },
+        await mockDelay(150);
+
+        const currentUser = user || MockDB.getUsers()[0];
+        const dbUser = MockDB.findUserByEmail(currentUser?.email || '') || currentUser;
+
+        setProfileData({
+          name: dbUser?.name || 'Administrator',
+          email: dbUser?.email || 'admin@company.com',
+          phone: dbUser?.phone || '+91 9876543210',
+          role: dbUser?.role || 'admin',
+          companyName: dbUser?.companyName || 'Makjuz Manufacturing',
+          department: dbUser?.department || 'Executive Management',
+          location: dbUser?.location || 'Chennai, Tamil Nadu',
+          bio: dbUser?.bio || 'Experienced manufacturing professional with a passion for quality and efficiency.',
+          joinedDate: dbUser?.joinedDate || new Date().toISOString(),
         });
-
-        const data = await response.json();
-
-        if (data.success) {
-          setProfileData({
-            name: data.user.name || '',
-            email: data.user.email || '',
-            phone: data.user.phone || '+91 9876543210',
-            role: data.user.role || '',
-            companyName: data.user.companyName || '',
-            department: data.user.department || 'Manufacturing',
-            location: data.user.location || 'Madurai, Tamil Nadu',
-            bio: data.user.bio || 'Experienced manufacturing professional with a passion for quality and efficiency.',
-            joinedDate: data.user.joinedDate || new Date().toISOString(),
-          });
-        } else {
-          setError(data.message || 'Failed to load profile');
-        }
       } catch (error) {
         console.error('Error fetching profile:', error);
         setError('Failed to load profile. Please try again.');
@@ -78,41 +68,31 @@ const ProfilePage: React.FC = () => {
     };
 
     fetchProfile();
-  }, []);
+  }, [user]);
 
   const handleSave = async () => {
     try {
       setError('');
-      const response = await fetch(`${API_URL}/users/profile`, {
-        method: 'PUT',
-        credentials: 'include', // Important: This sends cookies
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      await mockDelay(200);
+
+      const targetId = user?._id || MockDB.findUserByEmail(profileData.email)?._id;
+      if (targetId) {
+        MockDB.updateUser(targetId, {
           name: profileData.name,
           phone: profileData.phone,
           companyName: profileData.companyName,
           department: profileData.department,
           location: profileData.location,
           bio: profileData.bio,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSaveSuccess(true);
-        setIsEditing(false);
-        setTimeout(() => setSaveSuccess(false), 3000);
-      } else {
-        setError(data.message || 'Failed to update profile');
-        alert('Failed to update profile: ' + data.message);
+        });
       }
+
+      setSaveSuccess(true);
+      setIsEditing(false);
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Error saving profile:', error);
       setError('Failed to update profile. Please try again.');
-      alert('Failed to update profile: ' + error);
     }
   };
 

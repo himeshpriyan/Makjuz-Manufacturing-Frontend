@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, Building2, Package } from 'lucide-react';
+import { MockDB, mockDelay } from '../../data/mockData';
 
 interface PO {
   _id: string;
@@ -15,20 +16,12 @@ const AnalyticsPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [posResponse, companiesResponse] = await Promise.all([
-          fetch(`${import.meta.env.VITE_API_URL}/api/planning/po`, {
-            credentials: 'include',
-          }),
-          fetch(`${import.meta.env.VITE_API_URL}/api/customers/`, {
-            credentials: 'include',
-          })
-        ]);
+        await mockDelay(150);
+        const posData = MockDB.getPOs();
+        const companiesData = MockDB.getCustomers();
         
-        const posData = await posResponse.json();
-        const companiesData = await companiesResponse.json();
-        
-        if (Array.isArray(posData)) setPOs(posData);
-        if (companiesData.success) setCompanies(companiesData.data);
+        setPOs(posData as unknown as PO[]);
+        setCompanies(companiesData);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
